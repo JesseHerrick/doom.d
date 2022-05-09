@@ -42,7 +42,7 @@
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
 
-(setq evil-escape-key-sequence "ht")
+(setq evil-escape-key-sequence "ht") ;; change this if you don't use dvorak
 (setq lsp-elixir-suggest-specs nil)
 (setq lsp-elixir-mix-env "dev")
 (setq lsp-elixir-dialyzer-enabled nil)
@@ -97,8 +97,8 @@
   ;; quick open
   "on" 'open-todo-list
 
-  ;; buffer switching
-  ;; "bb" 'ivy-switch-buffer
+  ;; git
+  "gb" 'magit-blame
 
   ;; lsp
   "va" 'lsp-find-definition
@@ -131,6 +131,18 @@
     (when filename
       (kill-new filename)
       (message "Copied buffer file name '%s' to the clipboard." filename))))
+
+(defun copy-relative-file-path-to-clipboard ()
+  "Copies the relative file path of the current file."
+  (interactive)
+  (when-let (
+        (filename (string-replace (concat (getenv "HOME") "/code/") "" (buffer-file-name)))
+        )
+    (when filename
+      (message "'%s'" filename)
+      )
+    )
+  )
 
 (defun get-ex-test-file ()
         (replace-regexp-in-string "\.ex$" "_test.exs" (replace-regexp-in-string "lib\/" "test/" (buffer-file-name)))
@@ -170,6 +182,9 @@
 
 (map! :map 'org-mode-map
       :n "T" 'org-insert-todo-heading-respect-content)
+
+;; General useful editing bindings
+(map! :v "C-c C-c" 'fill-region)
 
 ;; (add-hook 'org-mode-hook
 ;;   (lambda ()
@@ -212,3 +227,28 @@
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/main.org" "* Inbox")
          "** TODO %?\n  %i\n  %a")))
+
+(defun rename-current-buffer-file ()
+  "Renames current buffer and file it is visiting."
+  (interactive)
+  (let* ((name (buffer-name))
+        (filename (buffer-file-name))
+        (basename (file-name-nondirectory filename)))
+    (if (not (and filename (file-exists-p filename)))
+        (error "Buffer '%s' is not visiting a file!" name)
+      (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
+        (if (get-buffer new-name)
+            (error "A buffer named '%s' already exists!" new-name)
+          (rename-file filename new-name 1)
+          (rename-buffer new-name)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil)
+          (message "File '%s' successfully renamed to '%s'"
+                   name (file-name-nondirectory new-name)))))))
+
+;; Enable folding
+(setq lsp-enable-folding t)
+
+;; Add origami and LSP integration
+(use-package! lsp-origami)
+(add-hook! 'lsp-after-open-hook #'lsp-origami-try-enable)
