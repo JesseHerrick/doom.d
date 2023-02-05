@@ -49,4 +49,13 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;(unpin! t)
 
-(package! lsp-origami)
+(package! harpoon)
+(package! exunit
+  :recipe (:host github :repo "JesseHerrick/exunit.el"))
+;; (package! tree-sitter)
+;; (package! tree-sitter-langs)
+
+;; (package! elixir-mode :recipe (:local-repo "/Users/jesse/code/emacs-elixir"))
+(unpin! lsp-mode)
+(package! elixir-ts-mode
+  :recipe (:host github :repo "wkirschbaum/elixir-ts-mode"))

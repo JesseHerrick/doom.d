@@ -28,6 +28,9 @@
 ;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
 ;; refresh your font settings. If Emacs still can't find your font, it likely
 ;; wasn't installed correctly. Font issues are rarely Doom issues!
+;;
+;; Set line height and center the text in the new line height
+(setq-default default-text-properties '(line-spacing 0.25 line-height 1.25))
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
@@ -47,8 +50,12 @@
 (setq lsp-elixir-mix-env "dev")
 (setq lsp-elixir-dialyzer-enabled nil)
 (setq lsp-elixir-signature-after-complete nil)
+(setq elixir-mode-hl-functions t)
 
 (setq projectile-sort-order 'recently-active)
+
+;; Emacs 29 Weirdness
+(setq text-quoting-style 'grave)
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
@@ -83,44 +90,63 @@
 ;; they are implemented.
 
 (map! :leader
-  ;; "u" 'evil-undo
-  "fs" 'save-buffer
-  ;; "s"  'save-buffer
-  ;; "pf" 'projectile-find-file
-  ;; ":"  'execute-extended-command
-  ;; "/"  'counsel-projectile-rg
-  "y"  'copy-file-name-to-clipboard
+      ;; "u" 'evil-undo
+      "fs" 'save-buffer
+      ;; "s"  'save-buffer
+      ;; "pf" 'projectile-find-file
+      ;; ":"  'execute-extended-command
+      ;; "/"  'counsel-projectile-rg
+      "y"  'copy-project-file-to-clipboard
+      ;; "y" 'copy-file-name-to-clipboard
 
-  ;; convenience
-  "cl" 'evilnc-comment-or-uncomment-lines
+      ;; convenience
+      "cl" 'evilnc-comment-or-uncomment-lines
 
-  ;; quick open
-  "on" 'open-todo-list
+      ;; quick open
+      "on" 'open-todo-list
 
-  ;; git
-  "gb" 'magit-blame
+      ;; git
+      "gb" 'magit-blame
+      "gg" 'magit
 
-  ;; lsp
-  "va" 'lsp-find-definition
+      ;; lsp
+      "va" 'lsp-find-definition
+      "vo" 'lsp-find-references
 
-  ;; treemacs
-  ;; "TAB" 'treemacs
+      ;; treemacs
+      ;; "TAB" 'treemacs
 
-  ;; window movement
-  "|" 'split-window-right
-  "q" 'evil-window-delete
-  "1" 'evil-window-left
-  "2" 'evil-window-right
-  "j" 'evil-window-down
-  "k" 'evil-window-up
-  "ne" 'flycheck-next-error
-  "TAB" 'treemacs
-)
+      ;; window movement
+      "|" 'split-window-right
+      "q" 'evil-window-delete
+      "1" 'evil-window-left
+      "2" 'evil-window-right
+      "j" 'evil-window-down
+      "k" 'evil-window-up
+      "ne" 'flycheck-next-error
+      "TAB" 'treemacs
+      )
 
 (map!
-  "C-c C-f" 'create-ex-module-file
-  "C-c C-t" 'create-ex-test-file
+ "C-c C-f" 'exunit-toggle-file-and-test
+ "C-c C-t" 'exunit-toggle-file-and-test
  )
+
+;; Elixir Tree-Sitter Mode
+
+(after! elixir-ts-mode
+  (add-hook 'elixir-ts-mode-hook #'lsp)
+  (require 'smartparens-elixir)
+  )
+
+(with-eval-after-load 'elixir-ts-mode '(require 'smartparens-elixir))
+
+(with-eval-after-load 'lsp-mode
+  (setq lsp-language-id-configuration
+        (append lsp-language-id-configuration
+                '((elixir-ts-mode . "elixir")
+                  (heex-ts-mode . "elixir"))))
+)
 
 (defun copy-file-name-to-clipboard ()
   "Copy the current buffer file name to the clipboard."
@@ -132,45 +158,44 @@
       (kill-new filename)
       (message "Copied buffer file name '%s' to the clipboard." filename))))
 
-(defun copy-relative-file-path-to-clipboard ()
-  "Copies the relative file path of the current file."
+(defun copy-project-file-to-clipboard ()
+  "Copy the current buffer file name (local to the project) to the clipboard."
   (interactive)
-  (when-let (
-        (filename (string-replace (concat (getenv "HOME") "/code/") "" (buffer-file-name)))
-        )
+
+  (let ((filename (string-replace (projectile-project-root) "" (buffer-file-name))))
     (when filename
-      (message "'%s'" filename)
-      )
-    )
+      (kill-new filename)
+      (message "Copied buffer file name '%s' to the clipboard." filename)
+      ))
   )
 
 (defun get-ex-test-file ()
-        (replace-regexp-in-string "\.ex$" "_test.exs" (replace-regexp-in-string "lib\/" "test/" (buffer-file-name)))
-)
+  (replace-regexp-in-string "\.ex$" "_test.exs" (replace-regexp-in-string "lib\/" "test/" (buffer-file-name)))
+  )
 
 (defun get-ex-module-file()
-        (replace-regexp-in-string "test\/" "lib/" (replace-regexp-in-string "_test\.exs$" ".ex" (buffer-file-name)))
-        )
+  (replace-regexp-in-string "test\/" "lib/" (replace-regexp-in-string "_test\.exs$" ".ex" (buffer-file-name)))
+  )
 
 (defun create-ex-test-file ()
-        "Makes a new Elixir test file given the current module file."
-        (interactive)
+  "Makes a new Elixir test file given the current module file."
+  (interactive)
 
-        (setq test-file (get-ex-test-file))
+  (setq test-file (get-ex-test-file))
 
-        (create-file-buffer test-file)
-        (find-file test-file)
-)
+  (create-file-buffer test-file)
+  (find-file test-file)
+  )
 
 (defun create-ex-module-file ()
-        "Makes or finds an Elixir module file given the current test file."
-        (interactive)
+  "Makes or finds an Elixir module file given the current test file."
+  (interactive)
 
-        (setq module-file (get-ex-module-file))
+  (setq module-file (get-ex-module-file))
 
-        (create-file-buffer module-file)
-        (find-file module-file)
-)
+  (create-file-buffer module-file)
+  (find-file module-file)
+  )
 
 (defun open-todo-list ()
   "Opens the main org mode todo list."
@@ -182,6 +207,16 @@
 
 (map! :map 'org-mode-map
       :n "T" 'org-insert-todo-heading-respect-content)
+
+(map! :leader
+      :map 'org-mode-map
+      "rf" 'org-refile)
+
+(map! :leader
+      :map 'elixir-ts-mode-map
+      "mtv" 'exunit-verify-all
+      "mts" 'exunit-verify-single
+      "mtr" 'exunit-rerun)
 
 ;; General useful editing bindings
 (map! :v "C-c C-c" 'fill-region)
@@ -212,7 +247,7 @@
 
 
 (setq org-todo-keywords
-    '((sequence "TODO(t)" "IN PROGRESS(i)" "WAITING(w)" "IN REVIEW(r)" "|" "DONE(d)")))
+      '((sequence "TODO(t)" "IN PROGRESS(i)" "WAITING(w)" "IN REVIEW(r)" "|" "DONE(d)")))
 
 (setq org-todo-keyword-faces
       '(("TODO" . "red")
@@ -232,8 +267,8 @@
   "Renames current buffer and file it is visiting."
   (interactive)
   (let* ((name (buffer-name))
-        (filename (buffer-file-name))
-        (basename (file-name-nondirectory filename)))
+         (filename (buffer-file-name))
+         (basename (file-name-nondirectory filename)))
     (if (not (and filename (file-exists-p filename)))
         (error "Buffer '%s' is not visiting a file!" name)
       (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
@@ -245,10 +280,3 @@
           (set-buffer-modified-p nil)
           (message "File '%s' successfully renamed to '%s'"
                    name (file-name-nondirectory new-name)))))))
-
-;; Enable folding
-(setq lsp-enable-folding t)
-
-;; Add origami and LSP integration
-(use-package! lsp-origami)
-(add-hook! 'lsp-after-open-hook #'lsp-origami-try-enable)
