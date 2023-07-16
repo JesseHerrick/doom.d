@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: IEx Pry
+# key: iex
+# --
+require IEx
+IEx.pry

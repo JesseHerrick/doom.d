@@ -45,14 +45,25 @@
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
 
+(add-to-list 'exec-path "~/code/elixir-ls/release")
 (setq evil-escape-key-sequence "ht") ;; change this if you don't use dvorak
 (setq lsp-elixir-suggest-specs nil)
 (setq lsp-elixir-mix-env "dev")
 (setq lsp-elixir-dialyzer-enabled nil)
 (setq lsp-elixir-signature-after-complete nil)
-(setq elixir-mode-hl-functions t)
+(setq lsp-elixir-ls-server-dir "~/code/elixir-ls/release")
+(setq lsp-enable-file-watchers nil)
+(setq lsp-elixir-fetch-deps t)
+;; (setq lsp-elixir-ls-version "0.15.1")
+
+(setq evil-snipe-smart-case t
+      evil-snipe-scope 'whole-buffer
+      evil-snipe-repeat-scope 'whole-buffer
+      evil-snipe-char-fold t)
 
 (setq projectile-sort-order 'recently-active)
+
+(menu-bar-mode -1)
 
 ;; Emacs 29 Weirdness
 (setq text-quoting-style 'grave)
@@ -146,7 +157,7 @@
         (append lsp-language-id-configuration
                 '((elixir-ts-mode . "elixir")
                   (heex-ts-mode . "elixir"))))
-)
+  )
 
 (defun copy-file-name-to-clipboard ()
   "Copy the current buffer file name to the clipboard."
@@ -214,7 +225,7 @@
 
 (map! :leader
       :map 'elixir-ts-mode-map
-      "mtv" 'exunit-verify-all
+      "mtv" 'exunit-verify
       "mts" 'exunit-verify-single
       "mtr" 'exunit-rerun)
 

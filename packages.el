@@ -59,3 +59,6 @@
 (unpin! lsp-mode)
 (package! elixir-ts-mode
   :recipe (:host github :repo "wkirschbaum/elixir-ts-mode"))
+
+(package! evil-textobj-tree-sitter
+  :recipe (:host github :repo "meain/evil-textobj-tree-sitter"))
